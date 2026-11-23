@@ -28,7 +28,8 @@ jobs:
 
   # Optional: after a push to main passes, call a deploy webhook. Configure the
   # repository secrets PLUGIN_DEPLOY_URL (an endpoint that accepts a POST with
-  # {"ref":"main"}) and PLUGIN_DEPLOY_TOKEN; without them the job is skipped.
+  # {"ref":"main","inputs":{"commit":"<sha>"}}, such as a workflow_dispatch API)
+  # and PLUGIN_DEPLOY_TOKEN; without them the job does nothing.
   deploy:
     needs: verify
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -52,5 +53,5 @@ jobs:
             -X POST \
             -H "Authorization: token $PLUGIN_DEPLOY_TOKEN" \
             -H "Content-Type: application/json" \
-            -d '{"ref":"main"}' \
+            -d "{\"ref\":\"main\",\"inputs\":{\"commit\":\"$GITHUB_SHA\"}}" \
             "$PLUGIN_DEPLOY_URL" >/dev/null

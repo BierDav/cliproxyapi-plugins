@@ -71,7 +71,8 @@ the host's `plugins.configs`, as each plugin's README describes.
 
 When a push to `main` passes, the `deploy` job can notify a deployment: set the
 repository secrets `PLUGIN_DEPLOY_URL` and `PLUGIN_DEPLOY_TOKEN` and it POSTs
-`{"ref":"main"}` to that URL. Without them the job does nothing. A `[skip ci]`
+`{"ref":"main","inputs":{"commit":"<verified commit>"}}` to that URL, with
+`Authorization: token <PLUGIN_DEPLOY_TOKEN>`. Without them the job does nothing. A `[skip ci]`
 commit runs no CI, so it should not be deployed.
 
 ## License
