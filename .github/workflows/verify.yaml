@@ -1,0 +1,56 @@
+name: Verify plugins
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin: [copilot, jetbrains, make, gemini-free]
+        # The plugins are cgo shared libraries, so each architecture is built
+        # on a native runner.
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      # Tests and builds in the pinned golang image from the Dockerfile, the
+      # same toolchain a deployment should build with.
+      - name: Test and build in the pinned Go image
+        run: docker build --build-arg 'PLUGIN=${{ matrix.plugin }}' .
+
+  # Optional: after a push to main passes, call a deploy webhook. Configure the
+  # repository secrets PLUGIN_DEPLOY_URL (an endpoint that accepts a POST with
+  # {"ref":"main"}) and PLUGIN_DEPLOY_TOKEN; without them the job is skipped.
+  deploy:
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    concurrency:
+      group: deploy-main
+      cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Notify the deployment
+        env:
+          PLUGIN_DEPLOY_URL: ${{ secrets.PLUGIN_DEPLOY_URL }}
+          PLUGIN_DEPLOY_TOKEN: ${{ secrets.PLUGIN_DEPLOY_TOKEN }}
+        run: |
+          set -eu
+          if [ -z "$PLUGIN_DEPLOY_URL" ] || [ -z "$PLUGIN_DEPLOY_TOKEN" ]; then
+            echo "No deploy webhook configured"
+            exit 0
+          fi
+          curl --fail --silent --show-error --retry 3 \
+            -X POST \
+            -H "Authorization: token $PLUGIN_DEPLOY_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"ref":"main"}' \
+            "$PLUGIN_DEPLOY_URL" >/dev/null

@@ -1,0 +1,10 @@
+dist/
+*.so
+*.dylib
+*.h
+__pycache__/
+.DS_Store
+# Local `go build` outputs inside a plugin directory.
+/jetbrains/jetbrains
+/jetbrains/cliproxyapi-jetbrains
+/make/cliproxyapi-make

@@ -1,0 +1,230 @@
+{
+  "anthropic-claude-4-sonnet": {
+    "family": "anthropic",
+    "native": "claude-sonnet-4-20250514"
+  },
+  "anthropic-claude-4.1-opus": {
+    "family": "anthropic",
+    "native": "claude-opus-4-1-20250805"
+  },
+  "anthropic-claude-4-5-sonnet": {
+    "family": "anthropic",
+    "native": "claude-sonnet-4-5-20250929"
+  },
+  "anthropic-claude-4-5-haiku": {
+    "family": "anthropic",
+    "native": "claude-haiku-4-5-20251001"
+  },
+  "anthropic-claude-4-5-opus": {
+    "family": "anthropic",
+    "native": "claude-opus-4-5-20251101"
+  },
+  "anthropic-claude-4-6-opus": {
+    "family": "anthropic",
+    "native": "claude-opus-4-6"
+  },
+  "anthropic-claude-4-6-sonnet": {
+    "family": "anthropic",
+    "native": "claude-sonnet-4-6"
+  },
+  "anthropic-claude-4-7-opus": {
+    "family": "anthropic",
+    "native": "claude-opus-4-7"
+  },
+  "anthropic-claude-4-8-opus": {
+    "family": "anthropic",
+    "native": "claude-opus-4-8"
+  },
+  "anthropic-claude-fable-5": {
+    "family": "anthropic",
+    "native": "claude-fable-5"
+  },
+  "anthropic-claude-sonnet-5": {
+    "family": "anthropic",
+    "native": "claude-sonnet-5"
+  },
+  "anthropic-claude-opus-5": {
+    "family": "anthropic",
+    "native": "claude-opus-5"
+  },
+  "anthropic-claude-fable-5-1": {
+    "family": "anthropic",
+    "native": "claude-fable-5-1"
+  },
+  "anthropic-claude-opus-5-5": {
+    "family": "anthropic",
+    "native": "claude-opus-5-5"
+  },
+  "anthropic-claude-sonnet-5-5": {
+    "family": "anthropic",
+    "native": "claude-sonnet-5-5"
+  },
+  "openai-gpt-4": {
+    "family": "openai",
+    "native": "gpt-4"
+  },
+  "openai-gpt-4-turbo": {
+    "family": "openai",
+    "native": "gpt-4-turbo"
+  },
+  "openai-gpt-4o": {
+    "family": "openai",
+    "native": "gpt-4o"
+  },
+  "openai-gpt-4o-mini": {
+    "family": "openai",
+    "native": "gpt-4o-mini"
+  },
+  "openai-o1": {
+    "family": "openai",
+    "native": "o1"
+  },
+  "openai-o3": {
+    "family": "openai",
+    "native": "o3"
+  },
+  "openai-o3-mini": {
+    "family": "openai",
+    "native": "o3-mini"
+  },
+  "openai-o4-mini": {
+    "family": "openai",
+    "native": "o4-mini"
+  },
+  "openai-gpt4.1": {
+    "family": "openai",
+    "native": "gpt-4.1"
+  },
+  "openai-gpt4.1-mini": {
+    "family": "openai",
+    "native": "gpt-4.1-mini"
+  },
+  "openai-gpt4.1-nano": {
+    "family": "openai",
+    "native": "gpt-4.1-nano"
+  },
+  "openai-gpt-5": {
+    "family": "openai",
+    "native": "gpt-5"
+  },
+  "openai-gpt-5-mini": {
+    "family": "openai",
+    "native": "gpt-5-mini"
+  },
+  "openai-gpt-5-nano": {
+    "family": "openai",
+    "native": "gpt-5-nano"
+  },
+  "openai-gpt-5-1": {
+    "family": "openai",
+    "native": "gpt-5.1"
+  },
+  "openai-gpt-5-2": {
+    "family": "openai",
+    "native": "gpt-5.2"
+  },
+  "openai-gpt-5-4": {
+    "family": "openai",
+    "native": "gpt-5.4"
+  },
+  "openai-gpt-5-4-mini": {
+    "family": "openai",
+    "native": "gpt-5.4-mini"
+  },
+  "openai-gpt-5-4-nano": {
+    "family": "openai",
+    "native": "gpt-5.4-nano"
+  },
+  "openai-gpt-5-5": {
+    "family": "openai",
+    "native": "gpt-5.5"
+  },
+  "openai-gpt-5-6-luna": {
+    "family": "openai",
+    "native": "gpt-5.6-luna"
+  },
+  "openai-gpt-5-6-terra": {
+    "family": "openai",
+    "native": "gpt-5.6-terra"
+  },
+  "openai-gpt-5-6-sol": {
+    "family": "openai",
+    "native": "gpt-5.6-sol"
+  },
+  "openai-gpt-6-astra": {
+    "family": "openai",
+    "native": "gpt-6-astra"
+  },
+  "openai-gpt-6-luna": {
+    "family": "openai",
+    "native": "gpt-6-luna"
+  },
+  "openai-gpt-6-sol": {
+    "family": "openai",
+    "native": "gpt-6-sol"
+  },
+  "openai-gpt-6-1-sol": {
+    "family": "openai",
+    "native": "gpt-6.1-sol"
+  },
+  "openai-gpt-6-2-sol": {
+    "family": "openai",
+    "native": "gpt-6.2-sol"
+  },
+  "openai-gpt-5-codex": {
+    "family": "openai",
+    "native": "gpt-5-codex"
+  },
+  "openai-gpt-5-1-codex": {
+    "family": "openai",
+    "native": "gpt-5.1-codex"
+  },
+  "openai-gpt-5-1-codex-mini": {
+    "family": "openai",
+    "native": "gpt-5.1-codex-mini"
+  },
+  "openai-gpt-5-1-codex-max": {
+    "family": "openai",
+    "native": "gpt-5.1-codex-max"
+  },
+  "openai-gpt-5-2-codex": {
+    "family": "openai",
+    "native": "gpt-5.2-codex"
+  },
+  "openai-gpt-5-3-codex": {
+    "family": "openai",
+    "native": "gpt-5.3-codex"
+  },
+  "xai-grok-4": {
+    "family": "xai",
+    "native": "grok-4-0709"
+  },
+  "xai-grok-4-fast": {
+    "family": "xai",
+    "native": "grok-4-fast-reasoning"
+  },
+  "xai-grok-4-1-fast": {
+    "family": "xai",
+    "native": "grok-4-1-fast-reasoning"
+  },
+  "xai-grok-4-1-fast-non-reasoning": {
+    "family": "xai",
+    "native": "grok-4-1-fast-non-reasoning"
+  },
+  "xai-grok-code-fast-1": {
+    "family": "xai",
+    "native": "grok-code-fast-1-0825"
+  },
+  "xai-grok-4-3": {
+    "family": "xai",
+    "native": "grok-4.3"
+  },
+  "xai-grok-4-5": {
+    "family": "xai",
+    "native": "grok-4.5"
+  },
+  "xai-grok-4-6": {
+    "family": "xai",
+    "native": "grok-4.6"
+  }
+}
