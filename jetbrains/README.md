@@ -32,6 +32,7 @@ JetBrains refresh tokens
 live in separate `/data/auth/jetbrains-<email>.json` credentials; the host owns
 their routing, persistence and scheduled refresh. The OAuth token is saved
 before license activation so a wrong License ID does not discard the sign-in.
+New accounts are registered with JetBrains' AI service before license activation.
 Pending PKCE verifiers are stored with mode `0600` for recovery of a failed
 exchange. They expire after ten minutes, are deleted after a successful
 exchange, and expired files are removed when another sign-in starts.

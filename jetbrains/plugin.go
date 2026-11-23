@@ -41,6 +41,8 @@ const tokenURL = "https://oauth.account.jetbrains.com/oauth2/token"
 const redirectURI = "http://localhost:3000"
 const jcpUserManagementAudience = "jcp-user-management"
 const grazieLiteLicenseType = "grazie.individual.lite"
+const userInfoURL = apiBase + "/auth/jetbrains-jwt/user-info"
+const registerURL = apiBase + "/auth/jetbrains-jwt/register"
 
 const jetbrainsLogoSVG = `<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" viewBox="0 0 512 512"><linearGradient id="jetbrains_svg__a" x1="6.785" x2="500.945" y1="12.255" y2="499.535" gradientTransform="matrix(1 0 0 -1 0 514)" gradientUnits="userSpaceOnUse"><stop offset="0" style="stop-color:#ff9419"/><stop offset=".43" style="stop-color:#ff021d"/><stop offset=".99" style="stop-color:#e600ff"/></linearGradient><path d="M162.7 29.3 29.3 162.7C10.6 181.4 0 206.9 0 233.4V472c0 22.1 17.9 40 40 40h238.6c26.6 0 51.9-10.6 70.7-29.3l133.4-133.4c18.7-18.7 29.3-44.2 29.3-70.7V40c0-22.1-17.9-40-40-40H233.4c-26.5 0-51.9 10.6-70.7 29.3" style="fill:url(#jetbrains_svg__a)"/><path d="M384 128H64v320h320z"/><path d="M240 376H104v32h136z" style="fill:#fff"/></svg>`
 
@@ -485,6 +487,19 @@ func discoverLicenses(callback, refreshToken string) ([]string, string) {
 	return out, strings.TrimSpace(tokens.Refresh)
 }
 
+// ensureRegistered registers an account with JetBrains' AI service when its
+// user info is refused (4xx), which is how a never-used account looks. A failed
+// lookup or a server error is left to the license activation that follows.
+func ensureRegistered(callback, idToken string) error {
+	response, err := httpCall(callback, "GET", userInfoURL, tokenHeaders(idToken), nil)
+	if err != nil || response.StatusCode < 400 || response.StatusCode >= 500 {
+		return nil
+	}
+	if _, err := checked(callback, "JetBrains account registration", "POST", registerURL, tokenHeaders(idToken), nil); err != nil {
+		return err
+	}
+	return nil
+}
 func refresh(callback string, s storage) (storage, error) {
 	return refreshStorage(callback, s, false)
 }
@@ -549,6 +564,11 @@ func refreshStorage(callback string, s storage, forceDiscovery bool) (storage, e
 	}
 
 	if s.JWT == "" || s.JWTExpires <= now || upgradeNeeded {
+		// A JetBrains account that never used AI must be registered with
+		// the AI service before any license can be activated or obtained.
+		if err := ensureRegistered(callback, s.IDToken); err != nil {
+			return s, err
+		}
 		var primary []string
 		if configuredCount > 0 {
 			for _, c := range candidateLicenses(s.LicenseID) {

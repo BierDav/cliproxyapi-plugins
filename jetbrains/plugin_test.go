@@ -341,6 +341,12 @@ func TestOAuthSavesAuthorizedTokenBeforeLicenseFailure(t *testing.T) {
 		if req["url"] == tokenURL {
 			return encode(upstreamResponse{StatusCode: 200, Body: encode(map[string]any{"id_token": testToken("test@example.com"), "refresh_token": "private-refresh"})}), nil
 		}
+		if req["url"] == userInfoURL {
+			return encode(upstreamResponse{StatusCode: 404}), nil
+		}
+		if req["url"] == registerURL {
+			return encode(upstreamResponse{StatusCode: 200}), nil
+		}
 		if !saved {
 			t.Fatal("attempted activation before saving authorized token")
 		}
@@ -612,6 +618,12 @@ func TestOAuthPKCEAndPrivatePendingSessionRecovery(t *testing.T) {
 				t.Fatal("OAuth token request does not match its authorization")
 			}
 			return encode(upstreamResponse{StatusCode: 200, Body: encode(map[string]string{"id_token": testToken("test@example.com"), "refresh_token": "private-refresh"})}), nil
+		}
+		if req["url"] == userInfoURL {
+			return encode(upstreamResponse{StatusCode: 404}), nil
+		}
+		if req["url"] == registerURL {
+			return encode(upstreamResponse{StatusCode: 200}), nil
 		}
 		return encode(upstreamResponse{StatusCode: 200, Body: encode(map[string]string{"token": testToken("test@example.com")})}), nil
 	}
