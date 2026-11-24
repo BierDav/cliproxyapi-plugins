@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strings"
 	"sync/atomic"
+	"time"
 
 	"github.com/BierDav/cliproxyapi-plugins/framework"
 )
@@ -49,6 +50,21 @@ type mcpError struct {
 	tool    string
 	status  int
 	message string
+}
+
+// pauseCooldown is how long the host skips a credential whose organization is
+// paused. The pause lasts until Make's monthly credits reset or more are
+// bought, so the host checks back now and then rather than on every request.
+const pauseCooldown = 30 * time.Minute
+
+// QuotaLimit tells the host that a paused organization is a limit on the
+// whole credential, so it cools the credential down for every model and moves
+// on to another Make organization.
+func (e *mcpError) QuotaLimit() (int, bool) {
+	if e.status != http.StatusTooManyRequests || !pausedMessage(e.message) {
+		return 0, false
+	}
+	return int(pauseCooldown / time.Second), true
 }
 
 // StatusCode gives the framework the HTTP status Make reported, if any.
@@ -198,11 +214,15 @@ func decodeToolResult(tool string, body []byte) (json.RawMessage, error) {
 // limit, so the host cools the credential down instead of treating Make as
 // broken.
 func toolErrorStatus(message string) int {
-	message = strings.ToLower(message)
-	if strings.Contains(message, "paused until") || strings.Contains(message, "operations or data-transfer limit") {
+	if pausedMessage(message) {
 		return http.StatusTooManyRequests
 	}
 	return http.StatusBadGateway
+}
+
+func pausedMessage(message string) bool {
+	message = strings.ToLower(message)
+	return strings.Contains(message, "paused until") || strings.Contains(message, "operations or data-transfer limit")
 }
 
 func truncate(value string, limit int) string {

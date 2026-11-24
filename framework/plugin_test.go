@@ -16,6 +16,10 @@ type statusFailure struct{ status int }
 func (e statusFailure) Error() string   { return fmt.Sprintf("upstream said %d", e.status) }
 func (e statusFailure) StatusCode() int { return e.status }
 
+type accountLimit struct{ statusFailure }
+
+func (accountLimit) QuotaLimit() (int, bool) { return 1800, true }
+
 func decodeEnvelope(t *testing.T, raw []byte) pluginabi.Envelope {
 	t.Helper()
 	var envelope pluginabi.Envelope
@@ -116,6 +120,10 @@ func TestErrorEnvelopes(t *testing.T) {
 		{"coded error without code takes the plugin's", &Error{Message: "nope", HTTPStatus: 400}, false,
 			pluginabi.Error{Code: "test_error", Message: "nope", HTTPStatus: 400}},
 		{"status 429 is retryable", statusFailure{429}, false, pluginabi.Error{Code: "test_error", Message: "upstream said 429", HTTPStatus: 429, Retryable: true}},
+		{"quota limit carries cooldown hints", fmt.Errorf("run: %w", accountLimit{statusFailure{429}}), false,
+			pluginabi.Error{Code: CredentialQuotaCode, Message: "run: upstream said 429", HTTPStatus: 429, Retryable: true, RetryAfterSeconds: 1800}},
+		{"coded error keeps its cooldown", &Error{Code: "upstream_error", Message: "slow down", HTTPStatus: 429, RetryAfterSeconds: 60}, false,
+			pluginabi.Error{Code: "upstream_error", Message: "slow down", HTTPStatus: 429, RetryAfterSeconds: 60}},
 		{"status 404 is final", fmt.Errorf("lookup: %w", statusFailure{404}), false, pluginabi.Error{Code: "test_error", Message: "lookup: upstream said 404", HTTPStatus: 404}},
 		{"status 0 counts as none", statusFailure{0}, false, pluginabi.Error{Code: "test_error", Message: "upstream said 0", HTTPStatus: 500, Retryable: true}},
 		{"plain error is retryable when configured", errors.New("broken"), false, pluginabi.Error{Code: "test_error", Message: "broken", HTTPStatus: 500, Retryable: true}},

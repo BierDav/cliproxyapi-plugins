@@ -162,12 +162,22 @@ func (p *Plugin) envelopeError(err error) *pluginabi.Error {
 		if code == "" {
 			code = p.ErrorCode
 		}
-		return &pluginabi.Error{Code: code, Message: coded.Message, HTTPStatus: coded.HTTPStatus, Retryable: coded.Retryable}
+		return &pluginabi.Error{Code: code, Message: coded.Message, HTTPStatus: coded.HTTPStatus, Retryable: coded.Retryable,
+			RetryAfterSeconds: coded.RetryAfterSeconds}
 	}
 	var status StatusCoder
 	if errors.As(err, &status) && status.StatusCode() > 0 {
 		code := status.StatusCode()
-		return &pluginabi.Error{Code: p.ErrorCode, Message: err.Error(), HTTPStatus: code, Retryable: RetryableStatus(code)}
+		failure := &pluginabi.Error{Code: p.ErrorCode, Message: err.Error(), HTTPStatus: code, Retryable: RetryableStatus(code)}
+		var limit QuotaLimit
+		if errors.As(err, &limit) {
+			var credentialScoped bool
+			failure.RetryAfterSeconds, credentialScoped = limit.QuotaLimit()
+			if credentialScoped {
+				failure.Code = CredentialQuotaCode
+			}
+		}
+		return failure
 	}
 	return &pluginabi.Error{Code: p.ErrorCode, Message: err.Error(), HTTPStatus: http.StatusInternalServerError, Retryable: p.InternalErrorsRetryable}
 }
@@ -179,6 +189,9 @@ type Error struct {
 	Message    string
 	HTTPStatus int
 	Retryable  bool
+	// RetryAfterSeconds is how long the host cools the credential down; see
+	// QuotaLimit.
+	RetryAfterSeconds int
 }
 
 func (e *Error) Error() string {
@@ -194,6 +207,20 @@ func (e *Error) Error() string {
 type StatusCoder interface {
 	error
 	StatusCode() int
+}
+
+// CredentialQuotaCode is the error code with which the host puts the whole
+// credential into cooldown, for every model, rather than only the requested
+// model.
+const CredentialQuotaCode = "credential_quota"
+
+// QuotaLimit is a StatusCoder that also tells the host how to cool the
+// credential down. retryAfterSeconds (0 for none) is how long the host skips
+// it; credentialScoped, for limits on the account itself, sends the error
+// with CredentialQuotaCode instead of the plugin's ErrorCode.
+type QuotaLimit interface {
+	error
+	QuotaLimit() (retryAfterSeconds int, credentialScoped bool)
 }
 
 // RetryableStatus reports whether the host may retry a request that failed

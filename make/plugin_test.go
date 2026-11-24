@@ -13,6 +13,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/BierDav/cliproxyapi-plugins/framework"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginabi"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginapi"
 )
@@ -812,13 +813,24 @@ func TestPausedOrganizationIsAQuotaLimit(t *testing.T) {
 	if !failed || envelope.Error == nil || envelope.Error.HTTPStatus != 429 || !envelope.Error.Retryable || !strings.Contains(envelope.Error.Message, "paused") {
 		t.Fatalf("a paused organization must be a retryable 429: %s", raw)
 	}
+	// The pause covers the whole organization, so the host must cool the
+	// credential down for every model, long enough to move on to another one.
+	if envelope.Error.Code != framework.CredentialQuotaCode || envelope.Error.RetryAfterSeconds != int(pauseCooldown/time.Second) {
+		t.Fatalf("a paused organization must cool the whole credential down: %s", raw)
+	}
 	// A stream would report the pause after its headers; later requests
 	// report it up front without running the gateway again.
 	raw, failed = handleMethod(pluginabi.MethodExecutorExecuteStream, executorPayload(true, "openai", chat))
 	envelope = pluginabi.Envelope{}
 	_ = json.Unmarshal(raw, &envelope)
-	if !failed || envelope.Error == nil || envelope.Error.HTTPStatus != 429 || runs != 1 {
+	if !failed || envelope.Error == nil || envelope.Error.HTTPStatus != 429 || runs != 1 || envelope.Error.Code != framework.CredentialQuotaCode {
 		t.Fatalf("paused organization not reported before streaming (runs=%d): %s", runs, raw)
+	}
+}
+
+func TestRateLimitIsNotAPause(t *testing.T) {
+	if after, scoped := (&mcpError{tool: "x", status: 429, message: "Too many requests"}).QuotaLimit(); after != 0 || scoped {
+		t.Fatalf("a plain rate limit must not cool the credential down for the pause: %d %v", after, scoped)
 	}
 }
 
