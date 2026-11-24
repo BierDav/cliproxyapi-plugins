@@ -125,7 +125,10 @@ func authData(s storage, id string) pluginapi.AuthData {
 	persisted := s
 	persisted.AccessToken = ""
 	persisted.AccessExpires = 0
-	metadata := map[string]any{"type": providerKey, "organization_id": s.OrganizationID, "team_id": s.TeamID}
+	// The host reads disable_cooling from the metadata a plugin returns, not
+	// from the stored file, so it has to be repeated here.
+	metadata := map[string]any{"type": providerKey, "organization_id": s.OrganizationID, "team_id": s.TeamID,
+		"disable_cooling": s.DisableCooling}
 	if s.Email != "" {
 		metadata["email"] = s.Email
 	}

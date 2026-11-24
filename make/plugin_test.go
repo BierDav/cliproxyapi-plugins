@@ -885,4 +885,8 @@ func TestRotationKeepsCooldownSwitch(t *testing.T) {
 	if !f.saved["make-78-4242.json"].DisableCooling {
 		t.Fatalf("rotation dropped an explicit disable_cooling: %s", f.savedRaw["make-78-4242.json"])
 	}
+	// The host takes the switch from the metadata the plugin returns.
+	if value, ok := authData(credential(), "").Metadata["disable_cooling"]; !ok || value != false {
+		t.Fatalf("auth metadata must carry disable_cooling: %v", authData(credential(), "").Metadata)
+	}
 }
