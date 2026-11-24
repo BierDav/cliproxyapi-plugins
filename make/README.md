@@ -118,7 +118,10 @@ for a run map to 400 or 422; transport and other run failures map to 502.
 A paused organization or team (its operations or data-transfer limit is used up)
 maps to 429. A streamed request learns about the pause only after its headers
 are sent, so for ten minutes afterwards requests on that credential fail with
-the 429 before running. A refresh token or OAuth client that Make no longer
+the 429 before running. Credentials are saved with `"disable_cooling": false`,
+so the host cools a paused organization down and routes to the next Make
+credential instead of retrying the paused one; the field survives the file
+rewrite on every refresh-token rotation. A refresh token or OAuth client that Make no longer
 knows maps to 401 with a request to sign in to Make again.
 
 Token and client registration requests close their connection afterwards. Make

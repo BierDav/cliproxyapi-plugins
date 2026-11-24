@@ -24,6 +24,7 @@ type fakeMake struct {
 	toolCalls []string
 	runInputs []map[string]any
 	saved     map[string]storage
+	savedRaw  map[string]json.RawMessage
 	emitted   [][]byte
 	closed    chan string
 	refreshes int
@@ -43,7 +44,7 @@ type fakeMake struct {
 }
 
 func newFakeMake(t *testing.T) *fakeMake {
-	f := &fakeMake{tools: map[string]func(map[string]any) (any, error){}, saved: map[string]storage{}, closed: make(chan string, 4), refresh: "refresh-0", email: "ada@example.com"}
+	f := &fakeMake{tools: map[string]func(map[string]any) (any, error){}, saved: map[string]storage{}, savedRaw: map[string]json.RawMessage{}, closed: make(chan string, 4), refresh: "refresh-0", email: "ada@example.com"}
 	previous := hostCall
 	hostCall = f.call
 	t.Cleanup(func() {
@@ -72,6 +73,7 @@ func (f *fakeMake) call(method string, payload any) (json.RawMessage, error) {
 		_ = json.Unmarshal(req.JSON, &s)
 		f.mu.Lock()
 		f.saved[req.Name] = s
+		f.savedRaw[req.Name] = req.JSON
 		f.mu.Unlock()
 		return encode(map[string]any{}), nil
 	case pluginabi.MethodHostLog:
@@ -849,5 +851,26 @@ func TestConfigAndRegistration(t *testing.T) {
 	result, err := dispatch(pluginabi.MethodModelForAuth, nil)
 	if err != nil || result.(pluginapi.ModelResponse).Models[0].ID != "make/gpt-6.2-sol" {
 		t.Fatalf("models %+v %v", result, err)
+	}
+}
+
+func TestRotationKeepsCooldownSwitch(t *testing.T) {
+	f := newFakeMake(t)
+	if _, _, err := liveStorage("cb", "make-77-4242.json", encode(credential()), true); err != nil {
+		t.Fatal(err)
+	}
+	var saved map[string]any
+	_ = json.Unmarshal(f.savedRaw["make-77-4242.json"], &saved)
+	if value, ok := saved["disable_cooling"]; !ok || value != false {
+		t.Fatalf("a rotated credential must keep cooldown enabled: %s", f.savedRaw["make-77-4242.json"])
+	}
+	optedOut := credential()
+	optedOut.DisableCooling = true
+	optedOut.RefreshToken = f.refresh
+	if _, _, err := liveStorage("cb", "make-78-4242.json", encode(optedOut), true); err != nil {
+		t.Fatal(err)
+	}
+	if !f.saved["make-78-4242.json"].DisableCooling {
+		t.Fatalf("rotation dropped an explicit disable_cooling: %s", f.savedRaw["make-78-4242.json"])
 	}
 }

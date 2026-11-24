@@ -59,6 +59,13 @@ type storage struct {
 	ConnectionID   int64  `json:"connection_id,omitempty"`
 	ScenarioID     int64  `json:"scenario_id,omitempty"`
 	GatewayVersion int    `json:"gateway_version,omitempty"`
+	// DisableCooling is the host's per-credential cooldown switch, read from
+	// the credential file. Left false, a 429 (a paused organization, used-up
+	// credits) puts this credential into cooldown, so the host moves on to
+	// another Make organization instead of retrying the paused one. It is
+	// written on every save: each refresh rotates the token and rewrites the
+	// file, and a field missing here would be dropped.
+	DisableCooling bool `json:"disable_cooling"`
 	// RotatedAt orders copies of the same credential: refresh tokens rotate,
 	// so the newest copy is the only usable one. (The host owns "updated_at".)
 	RotatedAt int64 `json:"rotated_at"`
