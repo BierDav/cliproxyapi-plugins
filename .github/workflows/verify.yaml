@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        plugin: [copilot, jetbrains, make, gemini-free]
+        plugin: [jetbrains, make, gemini-free]
         # The plugins are cgo shared libraries, so each architecture is built
         # on a native runner.
         runner: [ubuntu-24.04, ubuntu-24.04-arm]
