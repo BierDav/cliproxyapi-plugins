@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BierDav/cliproxyapi-plugins/copilot/internal/provider"
 	"github.com/BierDav/cliproxyapi-plugins/framework"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginabi"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginapi"
@@ -37,7 +38,7 @@ func (c quotaHTTPClient) DoStream(context.Context, pluginapi.HTTPRequest) (plugi
 }
 
 func copilotQuotaDescribe(pluginapi.QuotaDescribeRequest) (pluginapi.QuotaDescribeResponse, error) {
-	return pluginapi.QuotaDescribeResponse{SupportedProviders: []string{"copilot"}, DisplayName: "Copilot", SupportsReset: false}, nil
+	return pluginapi.QuotaDescribeResponse{SupportedProviders: []string{provider.ProviderID}, DisplayName: "Copilot", SupportsReset: false}, nil
 }
 
 func copilotQuotaFetch(ctx context.Context, req rpcQuotaFetchRequest) (pluginapi.QuotaFetchResponse, error) {
@@ -63,7 +64,7 @@ func quotaStorageFromRequest(req pluginapi.QuotaFetchRequest) (quotaStorage, err
 		return parseQuotaStorage(req.StorageJSON)
 	}
 	// Fileless workers receive the selected credential's persisted fields in metadata.
-	if !strings.EqualFold(strings.TrimSpace(req.Provider), "copilot") {
+	if !strings.EqualFold(strings.TrimSpace(req.Provider), provider.ProviderID) {
 		return quotaStorage{}, errors.New("Copilot credential unavailable")
 	}
 	raw, err := json.Marshal(req.Metadata)
@@ -80,7 +81,7 @@ type quotaStorage struct {
 
 func parseQuotaStorage(raw []byte) (quotaStorage, error) {
 	var s quotaStorage
-	if json.Unmarshal(raw, &s) != nil || !strings.EqualFold(s.Type, "copilot") || strings.TrimSpace(s.Token) == "" {
+	if json.Unmarshal(raw, &s) != nil || !strings.EqualFold(s.Type, provider.ProviderID) || strings.TrimSpace(s.Token) == "" {
 		return s, errors.New("Copilot credential unavailable")
 	}
 	s.Token = strings.TrimSpace(s.Token)
@@ -190,7 +191,7 @@ func copilotQuota(raw []byte, host framework.Host) (pluginapi.ManagementResponse
 			Disabled bool   `json:"disabled"`
 		} `json:"json"`
 	}
-	if json.Unmarshal(auth, &doc) != nil || doc.JSON.Type != "copilot" || doc.JSON.Token == "" || doc.JSON.Disabled {
+	if json.Unmarshal(auth, &doc) != nil || !strings.EqualFold(doc.JSON.Type, provider.ProviderID) || doc.JSON.Token == "" || doc.JSON.Disabled {
 		return pluginapi.ManagementResponse{}, errors.New("Copilot credential unavailable")
 	}
 	upstream, err := host.Do(context.Background(), req.Callback, framework.HTTPRequest{Method: http.MethodGet, URL: "https://api.github.com/copilot_internal/user", Headers: http.Header{
