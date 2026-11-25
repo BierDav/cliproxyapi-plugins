@@ -251,7 +251,7 @@ func (p *providerPlugin) plugin() *framework.Plugin {
 	plugin := &framework.Plugin{
 		Identifier: provider,
 		Metadata: pluginapi.Metadata{
-			Name: "Gemini Free", Version: "0.4.0", Author: "Prox",
+			Name: "Gemini Free", Version: "0.5.0", Author: "Prox",
 			GitHubRepository: "https://github.com/BierDav/cliproxyapi-plugins/tree/main/gemini-free",
 			ConfigFields: []pluginapi.ConfigField{
 				{Name: "oauth_client_id", Type: pluginapi.ConfigFieldTypeString, Description: "Google OAuth web client ID. The matching secret is supplied in the gateway environment."},
@@ -259,7 +259,7 @@ func (p *providerPlugin) plugin() *framework.Plugin {
 				{Name: "pool", Type: pluginapi.ConfigFieldTypeString, Description: "Model prefix shared by all enrolled accounts. Defaults to gcp."},
 				{Name: "models", Type: pluginapi.ConfigFieldTypeString, Description: "Comma-separated Gemini models every account serves as <pool>/<model>. Defaults to " + defaultModels + "."},
 				{Name: "vertex_models", Type: pluginapi.ConfigFieldTypeString, Description: "Comma-separated models served through Vertex AI in each account's billed project, for example gemini-4-neon. Empty disables Vertex AI."},
-				{Name: "vertex_credit", Type: pluginapi.ConfigFieldTypeString, Description: "Google Cloud credit per account in its billing currency, for example 269.43. Enables a Cloud Billing budget that reports the remaining credit as quota."},
+				{Name: "vertex_credit", Type: pluginapi.ConfigFieldTypeString, Description: "Google Cloud credit per account in its billing currency, for example 269.43. Enables Cloud Billing budgets that report the remaining credit and the free trial's end as quota."},
 			},
 		},
 		Capabilities: framework.Capabilities{

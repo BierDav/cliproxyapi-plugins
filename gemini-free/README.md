@@ -60,14 +60,32 @@ accounts after setting `vertex_models`.
 
 `vertex_credit` is each account's Google Cloud credit in its billing currency,
 as the credits page of Cloud Billing shows it (the $300 trial is €269.43 in
-EUR accounts). With it set, the plugin's quota reports the remaining credit.
-On the first quota read for an account it enables the Pub/Sub and Billing
-Budget APIs in the Vertex AI project and creates a `CLIProxy credits` budget on
-the project's billing account, counting cost before credits from that day. The
-budget publishes its spend to the `cliproxy-credit` Pub/Sub topic in the same
-project, which Cloud Billing does a few times a day, so the figure lags real
-spend by hours. Until the first report the quota shows the full credit. The
-budget amount can be changed in Google Cloud; the next report uses it.
+EUR accounts). With it set, the plugin's quota reports the remaining credit
+and when it ends. Google offers no API for credit balances, so the plugin
+derives both:
+
+- **Credit used.** On the first quota read for an account, the plugin enables
+  the Pub/Sub, Billing Budget and Cloud Logging APIs in the Vertex AI project.
+  It then creates two budgets on the project's billing account, both counting
+  from 2 January 2017, the earliest start Cloud Billing accepts, so they cover
+  everything since the account opened. `CLIProxy credits` counts cost before
+  credits, and `CLIProxy credits after promotions` counts cost after
+  promotional credits such as the free trial. The difference is what the
+  credit has paid. Cost the credit does not cover, such as Gemini API usage,
+  which the trial no longer pays for, is not counted. Both budgets publish to
+  the `cliproxy-credit` Pub/Sub topic in the same project. Cloud Billing does
+  this a few times a day, so the figure lags real spend by hours. Until both
+  budgets have reported, the quota shows the full credit. Budgets created by
+  earlier versions, which counted only from the day tracking started, are
+  updated in place. The amount of `CLIProxy credits` can be changed in Google
+  Cloud, and the next report uses it.
+- **End date.** The free trial ends 90 days after it starts, or when its
+  credit runs out. The plugin reads the audit logs of the billing account's
+  projects for the first time a project was linked to that billing account,
+  which happens when the trial starts, and reports the trial's end as the
+  quota's reset time. After that date, or once Google closes the billing
+  account, the quota shows no credit left. Audit logs are kept for 400 days.
+  If the start can't be found, the quota shows no end date.
 
 ## Enroll and use an account
 
