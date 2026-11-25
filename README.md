@@ -7,7 +7,6 @@ all of them are built on the shared framework:
 
 | Directory | Library | Provider |
 | --- | --- | --- |
-| [`copilot/`](copilot) | `cliproxyapi-copilot.so` | GitHub Copilot |
 | [`jetbrains/`](jetbrains) | `cliproxyapi-jetbrains.so` | JetBrains AI |
 | [`make/`](make) | `cliproxyapi-make.so` | Make AI Agents |
 | [`gemini-free/`](gemini-free) | `cliproxyapi-gemini-free.so` | Gemini Developer API Free tier |
@@ -64,8 +63,7 @@ go build -mod=readonly -trimpath -buildmode=c-shared \
   -o cliproxyapi-make.so ./make
 ```
 
-The package paths are `./copilot/cmd/cliproxyapi-copilot`, `./jetbrains`,
-`./make` and `./gemini-free`. Install the library as
+The package paths are `./jetbrains`, `./make` and `./gemini-free`. Install the library as
 `<plugins dir>/linux/<amd64-or-arm64>/cliproxyapi-<name>.so` and enable it in
 the host's `plugins.configs`, as each plugin's README describes.
 

@@ -1,4 +1,4 @@
-PLUGINS := copilot jetbrains make gemini-free
+PLUGINS := jetbrains make gemini-free
 
 .PHONY: test build
 
