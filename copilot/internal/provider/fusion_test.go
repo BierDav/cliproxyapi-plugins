@@ -128,7 +128,7 @@ func newFusionTestService(t *testing.T) (*Service, *fusionTestHost, []byte) {
 	t.Helper()
 	host := &fusionTestHost{t: t, selected: "gpt-5.6-luna", streams: map[string][]byte{}, closed: map[string]bool{}, done: make(chan string, 1)}
 	s := New(host)
-	storage := []byte(`{"type":"copilot","github_access_token":"github-token","model_aliases":[{"name":"gpt-5.6-luna","alias":"gh/gpt-5.6-luna"},{"name":"gpt-6.1-sol","alias":"gh/gpt-6.1-sol"},{"name":"auto","alias":"gh/auto"}]}`)
+	storage := []byte(`{"type":"github-copilot","github_access_token":"github-token","model_aliases":[{"name":"gpt-5.6-luna","alias":"gh/gpt-5.6-luna"},{"name":"gpt-6.1-sol","alias":"gh/gpt-6.1-sol"},{"name":"auto","alias":"gh/auto"}]}`)
 	fingerprint := tokenFingerprint("github-token")
 	s.tokenEntries["account"] = copilotTokenEntry{Token: "account-token", APIBaseURL: "https://copilot.test", Fingerprint: fingerprint, ExpiresAt: time.Now().Add(time.Hour)}
 	models := []upstreamModel{}

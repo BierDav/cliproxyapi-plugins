@@ -7,7 +7,13 @@ import (
 	"github.com/BierDav/cliproxyapi-plugins/framework"
 )
 
-const providerID = "copilot"
+// ProviderID is the host provider key and credential type the plugin owns.
+// CLIProxyAPI 8.1 and later ship a native "copilot" provider whose executor
+// always takes precedence over a plugin executor with the same key, so the
+// plugin uses its own key.
+const ProviderID = "github-copilot"
+
+const providerID = ProviderID
 
 type Service struct {
 	host framework.Transport

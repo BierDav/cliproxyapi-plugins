@@ -44,7 +44,7 @@ type rpcAuthModelRequest struct {
 func newPlugin() *framework.Plugin {
 	ctx := context.Background()
 	p := &framework.Plugin{
-		Identifier:   "copilot",
+		Identifier:   provider.ProviderID,
 		Metadata:     pluginMetadata(),
 		Capabilities: pluginCapabilities(),
 		Configure:    pluginService.Configure,

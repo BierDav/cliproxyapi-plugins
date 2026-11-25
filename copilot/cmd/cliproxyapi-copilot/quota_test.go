@@ -20,7 +20,7 @@ func TestQuotaRequiresExactAccountAndNeverReturnsToken(t *testing.T) {
 			if !strings.Contains(string(raw), `"auth_index":"chosen"`) {
 				t.Fatal(string(raw))
 			}
-			return json.RawMessage(`{"json":{"type":"copilot","github_access_token":"fixture-secret"}}`), nil
+			return json.RawMessage(`{"json":{"type":"github-copilot","github_access_token":"fixture-secret"}}`), nil
 		case pluginabi.MethodHostHTTPDo:
 			if !strings.Contains(string(raw), "https://api.github.com/copilot_internal/user") {
 				t.Fatal(string(raw))
@@ -44,8 +44,8 @@ func TestQuotaRequiresExactAccountAndNeverReturnsToken(t *testing.T) {
 }
 
 func TestQuotaUsesSelectedFilelessCredential(t *testing.T) {
-	req := pluginapi.QuotaFetchRequest{Provider: "copilot", Metadata: map[string]any{
-		"type": "copilot", "github_access_token": "selected-fixture-token",
+	req := pluginapi.QuotaFetchRequest{Provider: "github-copilot", Metadata: map[string]any{
+		"type": "github-copilot", "github_access_token": "selected-fixture-token",
 	}}
 	got, err := quotaStorageFromRequest(req)
 	if err != nil || got.Token != "selected-fixture-token" {
@@ -55,7 +55,7 @@ func TestQuotaUsesSelectedFilelessCredential(t *testing.T) {
 	if _, err := quotaStorageFromRequest(req); err == nil {
 		t.Fatal("must reject metadata belonging to another provider")
 	}
-	req.Provider = "copilot"
+	req.Provider = "github-copilot"
 	req.StorageJSON = []byte(`{"type":"other"}`)
 	if _, err := quotaStorageFromRequest(req); err == nil {
 		t.Fatal("invalid explicit storage must not fall back to metadata")

@@ -36,7 +36,7 @@ func TestAuthDataMergesAccountMetadata(t *testing.T) {
 
 func TestAuthStoragePreservesModelAliases(t *testing.T) {
 	raw := []byte(`{
-		"type": "copilot",
+		"type": "github-copilot",
 		"github_access_token": "token",
 		"github_login": "octocat",
 		"updated_at": "2026-11-07T00:00:00Z",

@@ -27,8 +27,14 @@ plugins:
       enabled: true
 ```
 
-The host's provider key remains `copilot`; existing credential files and model
-routes are preserved. GitHub device-code sign-in, token exchange and refresh,
+The plugin's provider key and credential `type` are `github-copilot`.
+CLIProxyAPI 8.1 and later ship a native `copilot` provider, and the host always
+runs a native executor in preference to a plugin executor with the same key. A
+plugin on `copilot` therefore loses its credentials to the native executor,
+which cannot read them. Credentials written by older versions of this plugin
+have `"type": "copilot"`; change that field to `"github-copilot"` to move them
+to this plugin. Model aliases stored in the credential, such as `gh/auto`, are
+kept. GitHub device-code sign-in, token exchange and refresh,
 auth-bound model discovery, streaming execution and protocol translation run
 inside the host. Native Claude OAuth remains a separate provider. Use the
 `excluded_model_prefixes` setting if Copilot models should not overlap it.
