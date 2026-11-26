@@ -119,6 +119,11 @@ func parseCatalog(cfg configuration) (catalog, error) {
 }
 
 // displayName turns gemini-4-hydrogen into Gemini 4 Hydrogen.
+// geminiThinking is how the host's catalog describes current Gemini models.
+// Without it the host strips generationConfig.thinkingConfig from requests, so
+// clients can neither choose a thinking level nor ask for thought summaries.
+var geminiThinking = &pluginapi.ThinkingSupport{Min: 128, Max: 65535, DynamicAllowed: true, Levels: []string{"low", "medium", "high"}}
+
 func displayName(model string) string {
 	words := strings.FieldsFunc(model, func(r rune) bool { return r == '-' || r == '_' })
 	for i, w := range words {
@@ -313,6 +318,7 @@ func (p *providerPlugin) plugin() *framework.Plugin {
 				DisplayName:                displayName(name) + " · " + tier,
 				SupportedGenerationMethods: []string{"generateContent", "streamGenerateContent", "countTokens"},
 				InputTokenLimit:            1048576, OutputTokenLimit: 65536, ContextLength: 1048576, MaxCompletionTokens: 65536,
+				Thinking: geminiThinking,
 			})
 		}
 		for _, name := range models.models {

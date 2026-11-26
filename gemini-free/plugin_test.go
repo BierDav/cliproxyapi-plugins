@@ -448,6 +448,11 @@ func TestEnrollVertexThenServeBothTiers(t *testing.T) {
 	if len(models) != 3 || models[2].ID != "gcp/"+vertexModel || models[2].DisplayName != "Gemini 4 Neon · Vertex" {
 		t.Fatalf("expected the Vertex model beside the Free models, got %+v", models)
 	}
+	for _, m := range models {
+		if m.Thinking == nil || len(m.Thinking.Levels) == 0 {
+			t.Fatalf("expected %s to declare thinking support, or the host strips thinkingConfig", m.ID)
+		}
+	}
 	for _, r := range []struct {
 		method, format string
 		payload        string
