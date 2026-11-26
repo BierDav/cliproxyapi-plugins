@@ -68,7 +68,7 @@ func (p *providerPlugin) execute(method string, r rpc) (any, error) {
 		}
 	}
 	if stream {
-		return p.startStream(r, source, request("streamGenerateContent?alt=sse", body), alias, body)
+		return p.startStream(r, source, request("streamGenerateContent?alt=sse", body), alias, vertex)
 	}
 	var result json.RawMessage
 	act := "generateContent"
@@ -86,7 +86,14 @@ func (p *providerPlugin) execute(method string, r rpc) (any, error) {
 	} else if act == "countTokens" && gjson.GetBytes(body, "generateContentRequest.model").Exists() {
 		requestBody, _ = sjson.SetBytes(body, "generateContentRequest.model", "models/"+model)
 	}
-	if err := p.call(r.HostCallbackID, act+" with Gemini Free", request(act, requestBody), &result); err != nil {
+	req := request(act, requestBody)
+	var err error
+	if vertex && act == "generateContent" {
+		body, err = p.generateVertex(r.HostCallbackID, req, &result)
+	} else {
+		err = p.call(r.HostCallbackID, act+" with Gemini Free", req, &result)
+	}
+	if err != nil {
 		return nil, err
 	}
 	if source != translator.FormatGemini {
@@ -103,13 +110,34 @@ func (p *providerPlugin) execute(method string, r rpc) (any, error) {
 	return pluginapi.ExecutorResponse{Payload: result, Headers: http.Header{"Content-Type": {"application/json"}}}, nil
 }
 
-func (p *providerPlugin) startStream(r rpc, source translator.Format, req framework.HTTPRequest, alias string, body []byte) (any, error) {
+func (p *providerPlugin) generateVertex(callbackID string, req framework.HTTPRequest, result *json.RawMessage) ([]byte, error) {
+	const step = "generateContent with Gemini Free"
+	ctx := context.Background()
+	resp, err := p.host.Do(ctx, callbackID, req)
+	if err == nil && resp.StatusCode == http.StatusBadRequest {
+		if repaired := repairVertexSignatures(req.Body, resp.Body); repaired != nil {
+			req.Body = repaired
+			resp, err = p.host.Do(ctx, callbackID, req)
+		}
+	}
+	return req.Body, decodeGoogleResponse(step, resp, err, result)
+}
+
+func (p *providerPlugin) startStream(r rpc, source translator.Format, req framework.HTTPRequest, alias string, vertex bool) (any, error) {
 	if r.StreamID == "" {
 		return nil, failure(http.StatusInternalServerError, "Missing Gemini Free output stream")
 	}
 	ctx := context.Background()
 	req.Headers.Set("Accept", "text/event-stream")
 	upstream, err := p.host.OpenStream(ctx, r.HostCallbackID, req)
+	// Retry only a rejection received before any response was sent to the client.
+	if vertex && err == nil && upstream.StatusCode == http.StatusBadRequest {
+		if repaired := repairVertexSignatures(req.Body, p.readVertexRejection(ctx, upstream.ID)); repaired != nil {
+			_ = p.host.CloseStream(ctx, upstream.ID)
+			req.Body = repaired
+			upstream, err = p.host.OpenStream(ctx, r.HostCallbackID, req)
+		}
+	}
 	if err != nil {
 		return nil, failure(http.StatusBadGateway, "Could not open the Gemini Free stream")
 	}
@@ -117,7 +145,7 @@ func (p *providerPlugin) startStream(r rpc, source translator.Format, req framew
 		_ = p.host.CloseStream(ctx, upstream.ID)
 		return nil, &googleError{status: upstream.StatusCode, step: "stream Gemini Free output"}
 	}
-	go p.forwardStream(r, source, alias, upstream.ID, body)
+	go p.forwardStream(r, source, alias, upstream.ID, req.Body)
 	return map[string]any{"headers": http.Header{"Content-Type": {"text/event-stream"}}}, nil
 }
 

@@ -109,6 +109,10 @@ func statusIs(err error, status int) bool {
 
 func (p *providerPlugin) call(callback, step string, req framework.HTTPRequest, result any) error {
 	res, err := p.host.Do(context.Background(), callback, req)
+	return decodeGoogleResponse(step, res, err, result)
+}
+
+func decodeGoogleResponse(step string, res framework.HTTPResponse, err error, result any) error {
 	if err != nil {
 		return failure(http.StatusBadGateway, "Could not contact Google to "+step)
 	}
