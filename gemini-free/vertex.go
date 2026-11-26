@@ -67,6 +67,39 @@ func (p *providerPlugin) vertexAccessToken(cb string, c credential) (string, err
 	return tokens.AccessToken, nil
 }
 
+// thinkingLevel turns a numeric thinking budget into the level that current
+// Gemini models require; they reject thinkingBudget. The thresholds are the
+// host's (internal/thinking/convert.go), limited to the levels the plugin
+// declares. Dynamic (-1) and zero budgets keep the model's default level.
+func thinkingLevel(body []byte) []byte {
+	for _, field := range []string{"thinkingBudget", "thinking_budget"} {
+		path := "generationConfig.thinkingConfig." + field
+		budget := gjson.GetBytes(body, path)
+		if !budget.Exists() {
+			continue
+		}
+		body, _ = sjson.DeleteBytes(body, path)
+		if gjson.GetBytes(body, "generationConfig.thinkingConfig.thinkingLevel").Exists() ||
+			gjson.GetBytes(body, "generationConfig.thinkingConfig.thinking_level").Exists() {
+			continue
+		}
+		level := ""
+		switch b := budget.Int(); {
+		case b <= 0:
+		case b <= 1024:
+			level = "low"
+		case b <= 8192:
+			level = "medium"
+		default:
+			level = "high"
+		}
+		if level != "" {
+			body, _ = sjson.SetBytes(body, "generationConfig.thinkingConfig.thinkingLevel", level)
+		}
+	}
+	return body
+}
+
 // vertexBody adapts a Gemini API request to Vertex AI, which requires a role
 // on every content entry.
 func vertexBody(body []byte) []byte {

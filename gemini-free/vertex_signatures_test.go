@@ -15,6 +15,7 @@ import (
 	"github.com/BierDav/cliproxyapi-plugins/framework"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginabi"
 	"github.com/router-for-me/CLIProxyAPI/v8/sdk/pluginapi"
+	"github.com/tidwall/gjson"
 )
 
 const invalidVertexSignature = `{"error":{"status":"INVALID_ARGUMENT","message":"Invalid thought signature."}}`
@@ -162,5 +163,19 @@ func TestVertexRetriesOnlySignatureRejections(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestThinkingBudgetBecomesLevel(t *testing.T) {
+	for budget, want := range map[string]string{"1024": "low", "4096": "medium", "32768": "high", "-1": "", "0": ""} {
+		body := thinkingLevel([]byte(`{"generationConfig":{"maxOutputTokens":10,"thinkingConfig":{"includeThoughts":true,"thinkingBudget":` + budget + `}}}`))
+		config := gjson.GetBytes(body, "generationConfig.thinkingConfig")
+		if config.Get("thinkingBudget").Exists() || config.Get("thinkingLevel").String() != want || !config.Get("includeThoughts").Bool() {
+			t.Fatalf("budget %s: got %s, want level %q", budget, config.Raw, want)
+		}
+	}
+	kept := thinkingLevel([]byte(`{"generationConfig":{"thinkingConfig":{"thinkingLevel":"high","thinkingBudget":128}}}`))
+	if got := gjson.GetBytes(kept, "generationConfig.thinkingConfig").Raw; got != `{"thinkingLevel":"high"}` {
+		t.Fatalf("an explicit level should win over a budget, got %s", got)
 	}
 }

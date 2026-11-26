@@ -52,6 +52,9 @@ func (p *providerPlugin) execute(method string, r rpc) (any, error) {
 		return nil, failure(http.StatusBadRequest, "Invalid Gemini request body")
 	}
 	body, _ = sjson.DeleteBytes(body, "model")
+	if method != pluginabi.MethodExecutorCountTokens {
+		body = thinkingLevel(body)
+	}
 	request := func(action string, payload []byte) framework.HTTPRequest {
 		return geminiRequest(c.Key, model, action, payload)
 	}
