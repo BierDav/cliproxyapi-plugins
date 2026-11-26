@@ -22,6 +22,9 @@ const invalidVertexSignature = `{"error":{"status":"INVALID_ARGUMENT","message":
 func TestRepairVertexSignaturesPreservesConversation(t *testing.T) {
 	native := []byte{1, 2, 3, 4, 5, 6, 7, 8}
 	wrapped := base64.StdEncoding.EncodeToString(append([]byte{0x12, 10, 0x0a, 8}, native...))
+	// Antigravity wraps Claude's base64 protobuf envelope in another base64 layer.
+	claude := base64.StdEncoding.EncodeToString([]byte("CAQSCAoDCAESASoh"))
+	alreadyMigrated := base64.StdEncoding.EncodeToString([]byte(vertexMigratedSignature))
 	body := fmt.Sprintf(`{
 		"contents": [
 			{"role":"user","parts":[{"text":"Find the status"}]},
@@ -31,14 +34,21 @@ func TestRepairVertexSignaturesPreservesConversation(t *testing.T) {
 			]},
 			{"role":"user","parts":[{"functionResponse":{"name":"sample","response":{"ok":true}}},
 				{"functionResponse":{"name":"sample2","response":{"ok":true}}}]},
-			{"role":"model","parts":[{"text":"I found it","thoughtSignature":%q}]},
+			{"role":"model","parts":[
+				{"text":"I found it","thoughtSignature":%q},
+				{"functionCall":{"name":"report","args":{}},"thoughtSignature":%q}
+			]},
+			{"role":"user","parts":[{"functionResponse":{"name":"report","response":{"ok":true}}}]},
+			{"role":"model","parts":[{"functionCall":{"name":"check","args":{}},"thoughtSignature":%q}]},
+			{"role":"user","parts":[{"functionResponse":{"name":"check","response":{"ok":true}}}]},
 			{"role":"user","parts":[{"text":"Continue"}]},
 			{"role":"model","parts":[{"functionCall":{"name":"sample","args":{}},"thoughtSignature":%q}]},
 			{"role":"user","parts":[{"functionResponse":{"name":"sample","response":{"ok":true}}}]}
 		], "generationConfig":{"maxOutputTokens":64}
-	}`, wrapped, wrapped, base64.StdEncoding.EncodeToString(native))
+	}`, wrapped, claude, claude, alreadyMigrated, base64.StdEncoding.EncodeToString(native))
 	want := strings.Replace(body, wrapped, vertexMigratedSignature, 1)
-	want = strings.Replace(want, `,"thoughtSignature":"`+wrapped+`"`, "", 1)
+	want = strings.Replace(want, `,"thoughtSignature":"`+claude+`"`, "", 1)
+	want = strings.Replace(want, claude, vertexMigratedSignature, 1)
 	got := repairVertexSignatures([]byte(body), []byte(invalidVertexSignature))
 	var a, b any
 	if json.Unmarshal(got, &a) != nil || json.Unmarshal([]byte(want), &b) != nil || !reflect.DeepEqual(a, b) {

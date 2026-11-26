@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/base64"
-	"encoding/binary"
 	"encoding/json"
 	"strings"
 
@@ -11,11 +10,14 @@ import (
 	"github.com/tidwall/sjson"
 )
 
-const vertexMigratedSignature = "skip_thought_signature_validator" // Google's marker for migrated function calls.
+const (
+	vertexMigratedSignature        = "skip_thought_signature_validator"
+	vertexContextEngineeringMarker = "context_engineering_is_the_way_to_go"
+)
 
-// Vertex gives no part index for this error. Only replace the wrapped Gemini
-// signatures observed on Antigravity. Native Vertex signatures are unwrapped;
-// Google can still use them for subsequent tool calls in the same turn.
+// Vertex doesn't identify the rejected part. On that specific error, migrate
+// foreign signatures (including Antigravity Gemini and Claude) but keep native
+// Vertex signatures, which can be needed by the next tool call in the same turn.
 func repairVertexSignatures(body, rejection []byte) []byte {
 	if gjson.GetBytes(rejection, "error.status").String() != "INVALID_ARGUMENT" {
 		return nil
@@ -50,7 +52,8 @@ func repairVertexSignatures(body, rejection []byte) []byte {
 				continue
 			}
 			for _, field := range []string{"thoughtSignature", "thought_signature"} {
-				if !wrappedThoughtSignature(part.Get(field).String()) {
+				signature := part.Get(field).String()
+				if signature == "" || isVertexReplaySignature(signature) {
 					continue
 				}
 				if firstCall {
@@ -75,28 +78,22 @@ func repairVertexSignatures(body, rejection []byte) []byte {
 	return repaired
 }
 
-// Antigravity wraps the opaque Tink output (prefix 0x01) in two protobuf bytes
-// fields. We recognize the wire envelope without interpreting the signature.
-func wrappedThoughtSignature(signature string) bool {
-	if signature == "" {
-		return false
+// Vertex issues unwrapped Tink signatures (prefix byte and four-byte key ID)
+// and accepts both text and base64 spellings of its documented migration markers.
+func isVertexReplaySignature(signature string) bool {
+	if signature == vertexMigratedSignature || signature == vertexContextEngineeringMarker {
+		return true
 	}
-	raw, err := base64.StdEncoding.DecodeString(signature)
+	unpadded := strings.TrimRight(signature, "=")
+	raw, err := base64.RawStdEncoding.DecodeString(unpadded)
+	if err != nil {
+		raw, err = base64.RawURLEncoding.DecodeString(unpadded)
+	}
 	if err != nil {
 		return false
 	}
-	for _, tag := range []byte{0x12, 0x0a} {
-		if len(raw) < 2 || raw[0] != tag {
-			return false
-		}
-		n, size := binary.Uvarint(raw[1:])
-		if size <= 0 || n != uint64(len(raw)-1-size) {
-			return false
-		}
-		raw = raw[1+size:]
-	}
-	// Tink's output starts with a prefix byte and a four-byte key ID.
-	return len(raw) > 5 && raw[0] == 0x01
+	return len(raw) > 5 && raw[0] == 0x01 ||
+		string(raw) == vertexMigratedSignature || string(raw) == vertexContextEngineeringMarker
 }
 
 func (p *providerPlugin) readVertexRejection(ctx context.Context, streamID string) []byte {
